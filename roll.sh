@@ -1,17 +1,15 @@
 #!/bin/bash
 # Rick Astley in your Terminal.
 # By Serene Han and Justine Tunney <3
-# Saved for posterity by CryptoDragonLady
-version='1.2'
-rick='https://raw.githubusercontent.com/CryptoDragonLady/rickrollrc/master'
+# Patched: paplay routing for Bluetooth audio, keroserene GitHub mirror
+version='1.3'
+rick='https://raw.githubusercontent.com/cheesburger13/rickrollrc/master'
 video="$rick/astley80.full.bz2"
-# TODO: I'll let someone with mac or windows machine send a pull request
-# to get gsm going again :)
 audio_gsm="$rick/roll.gsm"
 audio_raw="$rick/roll.s16.wav"
 audio_mp3="$rick/roll.mp3"
 audpid=0
-NEVER_GONNA='curl -s -L http://bit.ly/10hA8iC | bash'
+NEVER_GONNA='curl -s -L https://raw.githubusercontent.com/keroserene/rickrollrc/master/roll.sh | bash'
 MAKE_YOU_CRY="$HOME/.bashrc"
 red='\x1b[38;5;9m'
 yell='\x1b[38;5;216m'
@@ -26,7 +24,7 @@ quit() { echo -e "\x1b[2J \x1b[0H ${purp}<3 \x1b[?25h \x1b[u \x1b[m"; }
 usage () {
   echo -en "${green}Rick Astley performs ♪ Never Gonna Give You Up ♪ on STDOUT."
   echo -e "  ${purp}[v$version]"
-  echo -e "${yell}Usage: ./astley.sh [OPTIONS...]"
+  echo -e "${yell}Usage: ./roll.sh [OPTIONS...]"
   echo -e "${purp}OPTIONS : ${yell}"
   echo -e " help   - Show this message."
   echo -e " inject - Append to ${purp}${USER}${yell}'s bashrc. (Recommended :D)"
@@ -51,32 +49,31 @@ trap "quit" EXIT
 
 # Bean streamin' - agnostic to curl or wget availability.
 obtainium() {
-  if has? curl; then curl -s $1
+  if has? curl; then curl -sL $1
   elif has? wget; then wget -q -O - $1
   else echo "Cannot has internets. :(" && exit
   fi
 }
 echo -en "\x1b[?25l \x1b[2J \x1b[H"  # Hide cursor, clear screen.
 
-#echo -e "${yell}Fetching audio..."
+# Audio: paplay first (routes to PulseAudio/PipeWire sinks, incl. Bluetooth),
+# then afplay (Mac), then aplay (raw ALSA hardware only), then sox's play.
 if has? afplay; then
-  # On Mac OS, if |afplay| available, pre-fetch compressed audio.
   [ -f /tmp/roll.mp3 ] || obtainium $audio_mp3 >/tmp/roll.mp3
   afplay /tmp/roll.mp3 &
+elif has? paplay; then
+  [ -f /tmp/roll.s16.wav ] || obtainium $audio_raw >/tmp/roll.s16.wav
+  paplay /tmp/roll.s16.wav &
 elif has? aplay; then
-  # On Linux, if |aplay| available, stream raw sound.
-  obtainium $audio_raw | aplay -q &
+  obtainium $audio_raw | aplay -q -r 16000 &
 elif has? play; then
-  # On Cygwin, if |play| is available (via sox), pre-fetch compressed audio.
   obtainium $audio_gsm >/tmp/roll.gsm.wav
-  play -q /tmp/roll.gsm.wav &
+  play -t gsm -q /tmp/roll.gsm.wav &
 fi
 audpid=$!
 
-#echo -e "${yell}Fetching video..."
-# Sync FPS to reality as best as possible. Mac's freebsd version of date cannot
-# has nanoseconds so inject python. :/
-python <(cat <<EOF
+# Sync FPS to reality as best as possible.
+python3 <(cat <<EOF
 import sys
 import time
 fps = 25; time_per_frame = 1.0 / fps
