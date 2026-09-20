@@ -3,7 +3,7 @@
 # By Serene Han and Justine Tunney <3
 # Patched: paplay routing for Bluetooth audio, keroserene GitHub mirror
 version='1.3'
-rick='https://raw.githubusercontent.com/cheesburger13/rickrollrc/master'
+rick='https://raw.githubusercontent.com/keroserene/rickrollrc/master'
 video="$rick/astley80.full.bz2"
 audio_gsm="$rick/roll.gsm"
 audio_raw="$rick/roll.s16.wav"
@@ -58,17 +58,24 @@ echo -en "\x1b[?25l \x1b[2J \x1b[H"  # Hide cursor, clear screen.
 
 # Audio: paplay first (routes to PulseAudio/PipeWire sinks, incl. Bluetooth),
 # then afplay (Mac), then aplay (raw ALSA hardware only), then sox's play.
+# Fully detached with nohup+disown so the video pipeline's CPU/pipe load
+# downstream can never interrupt or cut off playback.
 if has? afplay; then
   [ -f /tmp/roll.mp3 ] || obtainium $audio_mp3 >/tmp/roll.mp3
-  afplay /tmp/roll.mp3 &
+  nohup afplay /tmp/roll.mp3 >/dev/null 2>&1 &
+  disown
 elif has? paplay; then
   [ -f /tmp/roll.s16.wav ] || obtainium $audio_raw >/tmp/roll.s16.wav
-  paplay /tmp/roll.s16.wav &
+  nohup paplay /tmp/roll.s16.wav >/dev/null 2>&1 &
+  disown
 elif has? aplay; then
-  obtainium $audio_raw | aplay -q -r 16000 &
+  [ -f /tmp/roll.s16.wav ] || obtainium $audio_raw >/tmp/roll.s16.wav
+  nohup aplay -q -r 16000 /tmp/roll.s16.wav >/dev/null 2>&1 &
+  disown
 elif has? play; then
   obtainium $audio_gsm >/tmp/roll.gsm.wav
-  play -t gsm -q /tmp/roll.gsm.wav &
+  nohup play -t gsm -q /tmp/roll.gsm.wav >/dev/null 2>&1 &
+  disown
 fi
 audpid=$!
 
