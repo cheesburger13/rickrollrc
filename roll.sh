@@ -1,15 +1,15 @@
 #!/bin/bash
 # Rick Astley in your Terminal.
 # By Serene Han and Justine Tunney <3
-# Patched: paplay routing for Bluetooth audio, keroserene GitHub mirror
+# Patched: paplay routing for Bluetooth audio, cheesburger13 GitHub mirror
 version='1.3'
-rick='https://raw.githubusercontent.com/keroserene/rickrollrc/master'
+rick='https://raw.githubusercontent.com/cheesburger13/rickrollrc/master'
 video="$rick/astley80.full.bz2"
 audio_gsm="$rick/roll.gsm"
 audio_raw="$rick/roll.s16.wav"
 audio_mp3="$rick/roll.mp3"
 audpid=0
-NEVER_GONNA='curl -s -L https://raw.githubusercontent.com/keroserene/rickrollrc/master/roll.sh | bash'
+NEVER_GONNA='curl -s -L https://raw.githubusercontent.com/cheesburger13/rickrollrc/master/roll.sh | bash'
 MAKE_YOU_CRY="$HOME/.bashrc"
 red='\x1b[38;5;9m'
 yell='\x1b[38;5;216m'
